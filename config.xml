@@ -1,16 +1,20 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.alfernado.tvtracker" version="1.0.0" xmlns="http://w3.org" xmlns:cdv="http://apache.org">
+<widget id="com.alfernado.tvtracker" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://apache.org">
     <name>Incident Tracker</name>
-    <description>Days without incident tracker for Google TV.</description>
-    <author email="alfernado@outlook.com" href="http://example.com">You</author>
+    <description>Incident Tracker for Google TV</description>
+    <author email="alfernado@outlook.com">You</author>
     <content src="index.html" />
-    <preference name="ScrollEnabled" value="false" />
     
+    <preference name="ScrollEnabled" value="false" />
+
     <platform name="android">
+        <!-- Tells the TV it doesn't need a touch screen -->
         <config-file target="AndroidManifest.xml" parent="/manifest">
             <uses-feature android:name="android.software.leanback" android:required="false" />
             <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
         </config-file>
+
+        <!-- Puts the icon on the Google TV home screen launcher -->
         <config-file target="AndroidManifest.xml" parent="/manifest/application/activity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,3 +23,4 @@
         </config-file>
     </platform>
 </widget>
+
