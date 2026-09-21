@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-node: 20
+        node-version: 18
 
     - name: Set up Java
       uses: actions/setup-java@v4
@@ -25,13 +25,15 @@ jobs:
         java-version: '17'
 
     - name: Install Cordova
-      run: npm install -g cordova
+      run: |
+        npm install -g cordova
+        cordova telemetry off
 
     - name: Prepare Cordova Project
       run: |
-        mkdir cordova-app
-        cd cordova-app
-        cordova create app com.yourname.tvtracker "Incident Tracker"
+        mkdir my_tv_app
+        cd my_tv_app
+        cordova create app com.alfernado.tvtracker "Incident Tracker"
         cd app
         cordova platform add android
         rm -rf www/*
@@ -43,4 +45,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Google-TV-Tracker-APK
-        path: cordova-app/app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: my_tv_app/app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+
