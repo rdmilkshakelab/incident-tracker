@@ -1,1 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Incident Tracker</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: #111d2e;
+      --panel-2: #17263b;
+      --text: #f4f7fb;
+      --muted: #9eacc0;
+      --blue: #4da3ff;
+      --green: #35d07f;
+      --yellow: #f8c64d;
+      --red: #ff6875;
+      --focus: #9bd0ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 80% 0%, #19375d 0, transparent 36%), var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 20px;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; padding: 42px 58px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 34px; }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .logo { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, var(--blue), #735cff); font-size: 30px; font-weight: 800; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 34px; letter-spacing: .2px; }
+    .subtitle { color: var(--muted); font-size: 16px; margin-top: 5px; }
+    .clock { color: var(--muted); font-size: 17px; text-align: right; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 30px; }
+    .stat, .panel { background: rgba(17, 29, 46, .94); border: 1px solid #263a55; border-radius: 16px; }
+    .stat { padding: 22px 24px; }
+    .stat-label { color: var(--muted); font-size: 16px; }
+    .stat-value { font-size: 34px; font-weight: 800; margin-top: 9px; }
+    .accent-blue { color: var(--blue); } .accent-red { color: var(--red); } .accent-yellow { color: var(--yellow); } .accent-green { color: var(--green); }
+    .toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .toolbar h2 { flex: 1; font-size: 25px; }
+    input, select, textarea { color: var(--text); background: #0c1727; border: 1px solid #314762; border-radius: 9px; padding: 12px 14px; outline: none; }
+    input:focus, select:focus, textarea:focus, button:focus { border-color: var(--focus); box-shadow: 0 0 0 3px rgba(77,163,255,.32); }
+    .search { width: 250px; }
+    .primary { border: 0; border-radius: 9px; padding: 12px 18px; color: #06111f; background: var(--blue); font-weight: 800; }
+    .secondary { border: 1px solid #385574; border-radius: 9px; padding: 11px 17px; color: var(--text); background: #15263c; }
+    .table-wrap { overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { color: var(--muted); font-size: 15px; font-weight: 600; padding: 17px 20px; border-bottom: 1px solid #29405c; }
+    td { padding: 18px 20px; border-bottom: 1px solid #20344c; vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover, tbody tr:focus-within { background: #172940; }
+    .id { color: var(--blue); font-weight: 700; }
+    .summary { font-weight: 700; } .details { display: block; color: var(--muted); font-size: 15px; margin-top: 5px; font-weight: 400; }
+    .pill { display: inline-block; border-radius: 20px; padding: 6px 11px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .sev-critical { color: #ffb4b9; background: #542735; } .sev-high { color: #ffd395; background: #533d24; } .sev-medium { color: #ffe597; background: #4a421f; } .sev-low { color: #a8e9c5; background: #1e4938; }
+    .status-open { color: #ffb4b9; background: #542735; } .status-progress { color: #a9d4ff; background: #1e4163; } .status-resolved { color: #a8e9c5; background: #1e4938; }
+    .empty { display: none; text-align: center; color: var(--muted); padding: 50px; }
+    .modal-backdrop { position: fixed; inset: 0; display: none; place-items: center; padding: 28px; background: rgba(0,0,0,.72); }
+    .modal-backdrop.show { display: grid; }
+    .modal { width: min(650px, 100%); background: #132239; border: 1px solid #385574; border-radius: 18px; padding: 28px; }
+    .modal h2 { margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .field { display: flex; flex-direction: column; gap: 7px; color: var(--muted); font-size: 15px; }
+    .field.full { grid-column: 1 / -1; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 22px; }
+    @media (max-width: 850px) { .app { padding: 28px 22px; } .stats { grid-template-columns: repeat(2, 1fr); } .search { width: 180px; } th:nth-child(4), td:nth-child(4) { display: none; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand"><div class="logo">IT</div><div><h1>Incident Tracker</h1><p class="subtitle">Operations command center</p></div></div>
+      <div class="clock" id="clock"></div>
+    </header>
 
+    <section class="stats" aria-label="Incident summary">
+      <div class="stat"><div class="stat-label">Total incidents</div><div class="stat-value accent-blue" id="totalCount">0</div></div>
+      <div class="stat"><div class="stat-label">Open</div><div class="stat-value accent-red" id="openCount">0</div></div>
+      <div class="stat"><div class="stat-label">In progress</div><div class="stat-value accent-yellow" id="progressCount">0</div></div>
+      <div class="stat"><div class="stat-label">Resolved</div><div class="stat-value accent-green" id="resolvedCount">0</div></div>
+    </section>
+
+    <section>
+      <div class="toolbar"><h2>Recent incidents</h2><input class="search" id="search" type="search" placeholder="Search incidents" aria-label="Search incidents"><select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option></select><button class="primary" id="newIncident">+ New incident</button></div>
+      <div class="panel table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Incident</th><th>Severity</th><th>Owner</th><th>Status</th></tr></thead>
+          <tbody id="incidentRows"></tbody>
+        </table>
+        <div class="empty" id="emptyState">No incidents match your filters.</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form class="modal" id="incidentForm">
+      <h2 id="modalTitle">Create incident</h2>
+      <div class="form-grid">
+        <label class="field full">Summary<input id="summary" required maxlength="80" placeholder="What happened?"></label>
+        <label class="field">Severity<select id="severity"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select></label>
+        <label class="field">Owner<input id="owner" required maxlength="40" placeholder="Team or person"></label>
+        <label class="field">Status<select id="status"><option selected>Open</option><option>In Progress</option><option>Resolved</option></select></label>
+        <label class="field">Service<input id="service" maxlength="40" placeholder="Affected service"></label>
+        <label class="field full">Notes<textarea id="notes" rows="3" maxlength="200" placeholder="Add useful context"></textarea></label>
+      </div>
+      <div class="modal-actions"><button type="button" class="secondary" id="cancelModal">Cancel</button><button class="primary" type="submit">Create incident</button></div>
+    </form>
+  </div>
+
+  <script>
+    const starterIncidents = [
+      { id: 'INC-1042', summary: 'TV authentication failures', service: 'Identity service', owner: 'Platform', severity: 'Critical', status: 'Open', notes: 'Users are unable to complete sign-in.' },
+      { id: 'INC-1041', summary: 'Delayed incident notifications', service: 'Notifications', owner: 'SRE', severity: 'High', status: 'In Progress', notes: 'Delivery latency is above the normal threshold.' },
+      { id: 'INC-1040', summary: 'Guide content out of date', service: 'TV guide', owner: 'Content', severity: 'Medium', status: 'In Progress', notes: 'Refreshing the content feed.' },
+      { id: 'INC-1039', summary: 'Remote pairing restored', service: 'Device pairing', owner: 'TV Experience', severity: 'Low', status: 'Resolved', notes: 'Fix deployed and verified.' }
+    ];
+    let incidents = JSON.parse(localStorage.getItem('incidents') || 'null') || starterIncidents;
+    const $ = id => document.getElementById(id);
+    const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function render() {
+      const query = $('search').value.toLowerCase().trim(), filter = $('statusFilter').value;
+      const shown = incidents.filter(i => (filter === 'all' || i.status === filter) && [i.id,i.summary,i.service,i.owner,i.severity,i.status].join(' ').toLowerCase().includes(query));
+      $('incidentRows').innerHTML = shown.map(i => `<tr tabindex="0"><td class="id">${esc(i.id)}</td><td><span class="summary">${esc(i.summary)}</span><span class="details">${esc(i.service)}${i.notes ? ' · ' + esc(i.notes) : ''}</span></td><td><span class="pill sev-${i.severity.toLowerCase()}">${esc(i.severity)}</span></td><td>${esc(i.owner)}</td><td><span class="pill status-${i.status.toLowerCase().replace(' ', '-')}">${esc(i.status)}</span></td></tr>`).join('');
+      $('emptyState').style.display = shown.length ? 'none' : 'block';
+      $('totalCount').textContent = incidents.length; $('openCount').textContent = incidents.filter(i => i.status === 'Open').length; $('progressCount').textContent = incidents.filter(i => i.status === 'In Progress').length; $('resolvedCount').textContent = incidents.filter(i => i.status === 'Resolved').length;
+      localStorage.setItem('incidents', JSON.stringify(incidents));
+    }
+    function updateClock() { $('clock').textContent = new Date().toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    function openModal() { $('modalBackdrop').classList.add('show'); $('summary').focus(); }
+    function closeModal() { $('modalBackdrop').classList.remove('show'); $('incidentForm').reset(); }
+    $('search').addEventListener('input', render); $('statusFilter').addEventListener('change', render); $('newIncident').addEventListener('click', openModal); $('cancelModal').addEventListener('click', closeModal);
+    $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
+    $('incidentForm').addEventListener('submit', e => { e.preventDefault(); const next = incidents.length ? Math.max(...incidents.map(i => Number(i.id.replace(/\D/g, '')) || 0)) + 1 : 1000; incidents.unshift({ id: `INC-${next}`, summary: $('summary').value, service: $('service').value || 'Unassigned service', owner: $('owner').value, severity: $('severity').value, status: $('status').value, notes: $('notes').value }); closeModal(); render(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modalBackdrop').classList.contains('show')) closeModal(); });
+    render(); updateClock(); setInterval(updateClock, 30000);
+  </script>
+</body>
+</html>
