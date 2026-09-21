@@ -1,46 +1,33 @@
-name: Extract Google TV APK
+name: Extract and Publish Google TV APK
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "Google-TV-Tracker-APK.zip"
-      - ".github/workflows/extract-apk.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  extract:
+  extract-and-release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Extract APK archive
-        shell: bash
+      - name: Extract APK
         run: |
           set -euo pipefail
-          rm -rf extracted-apk
           mkdir -p extracted-apk
-          unzip -q -o "Google-TV-Tracker-APK.zip" -d extracted-apk
-          echo "Extracted files:"
-          find extracted-apk -type f -print
+          unzip -q -o Google-TV-Tracker-APK.zip -d extracted-apk
+          test -f extracted-apk/app-debug.apk
+          ls -l extracted-apk
 
-      - name: Verify APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk="extracted-apk/app-debug.apk"
-          test -f "$apk"
-          file "$apk"
-          sha256sum "$apk"
-
-      - name: Upload extracted APK
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-debug-apk
-          path: extracted-apk/app-debug.apk
-          if-no-files-found: error
-          retention-days: 14
+          tag_name: apk-${{ github.run_number }}
+          name: Android TV APK ${{ github.run_number }}
+          body: |
+            Extracted Android TV debug APK.
+          files: extracted-apk/app-debug.apk
+          fail_on_unmatched_files: true
