@@ -29,13 +29,15 @@
     button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
     .app { min-height: 100vh; padding: 42px 58px; }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 34px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
     .brand { display: flex; align-items: center; gap: 18px; }
     .logo { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, var(--blue), #735cff); font-size: 30px; font-weight: 800; }
     h1, h2, h3, p { margin: 0; }
     h1 { font-size: 34px; letter-spacing: .2px; }
     .subtitle { color: var(--muted); font-size: 16px; margin-top: 5px; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
     .clock { color: var(--muted); font-size: 17px; text-align: right; }
+    .day-tag { display: inline-block; background: rgba(77,163,255,.12); color: var(--blue); border: 1px solid rgba(77,163,255,.4); border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 700; }
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 30px; }
     .stat, .panel { background: rgba(17, 29, 46, .94); border: 1px solid #263a55; border-radius: 16px; }
     .stat { padding: 22px 24px; }
@@ -49,6 +51,7 @@
     .search { width: 250px; }
     .primary { border: 0; border-radius: 9px; padding: 12px 18px; color: #06111f; background: var(--blue); font-weight: 800; }
     .secondary { border: 1px solid #385574; border-radius: 9px; padding: 11px 17px; color: var(--text); background: #15263c; }
+    .danger { border: 0; border-radius: 9px; padding: 11px 17px; color: #fff; background: #d4495a; font-weight: 700; }
     .table-wrap { overflow: hidden; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { color: var(--muted); font-size: 15px; font-weight: 600; padding: 17px 20px; border-bottom: 1px solid #29405c; }
@@ -76,7 +79,10 @@
   <main class="app">
     <header>
       <div class="brand"><div class="logo">IT</div><div><h1>Incident Tracker</h1><p class="subtitle">Operations command center</p></div></div>
-      <div class="clock" id="clock"></div>
+      <div class="header-right">
+        <div class="day-tag" id="dayTag">Loading day…</div>
+        <div class="clock" id="clock"></div>
+      </div>
     </header>
 
     <section class="stats" aria-label="Incident summary">
@@ -87,10 +93,21 @@
     </section>
 
     <section>
-      <div class="toolbar"><h2>Recent incidents</h2><input class="search" id="search" type="search" placeholder="Search incidents" aria-label="Search incidents"><select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option></select><button class="primary" id="newIncident">+ New incident</button></div>
+      <div class="toolbar">
+        <h2>Recent incidents</h2>
+        <input class="search" id="search" type="search" placeholder="Search incidents" aria-label="Search incidents">
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="all">All statuses</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+        <button class="primary" id="newIncident">+ New incident</button>
+        <button class="danger" id="resetData" type="button">Reset</button>
+      </div>
       <div class="panel table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Incident</th><th>Severity</th><th>Owner</th><th>Status</th></tr></thead>
+          <thead><tr><th>ID</th><th>Incident</th><th>Severity</th><th>Owner</th><th>Status</th><th>Date</th></tr></thead>
           <tbody id="incidentRows"></tbody>
         </table>
         <div class="empty" id="emptyState">No incidents match your filters.</div>
@@ -106,7 +123,8 @@
         <label class="field">Severity<select id="severity"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select></label>
         <label class="field">Owner<input id="owner" required maxlength="40" placeholder="Team or person"></label>
         <label class="field">Status<select id="status"><option selected>Open</option><option>In Progress</option><option>Resolved</option></select></label>
-        <label class="field">Service<input id="service" maxlength="40" placeholder="Affected service"></label>
+        <label class="field">Date<input id="date" type="date" required></label>
+        <label class="field full">Service<input id="service" maxlength="40" placeholder="Affected service"></label>
         <label class="field full">Notes<textarea id="notes" rows="3" maxlength="200" placeholder="Add useful context"></textarea></label>
       </div>
       <div class="modal-actions"><button type="button" class="secondary" id="cancelModal">Cancel</button><button class="primary" type="submit">Create incident</button></div>
@@ -115,29 +133,53 @@
 
   <script>
     const starterIncidents = [
-      { id: 'INC-1042', summary: 'TV authentication failures', service: 'Identity service', owner: 'Platform', severity: 'Critical', status: 'Open', notes: 'Users are unable to complete sign-in.' },
-      { id: 'INC-1041', summary: 'Delayed incident notifications', service: 'Notifications', owner: 'SRE', severity: 'High', status: 'In Progress', notes: 'Delivery latency is above the normal threshold.' },
-      { id: 'INC-1040', summary: 'Guide content out of date', service: 'TV guide', owner: 'Content', severity: 'Medium', status: 'In Progress', notes: 'Refreshing the content feed.' },
-      { id: 'INC-1039', summary: 'Remote pairing restored', service: 'Device pairing', owner: 'TV Experience', severity: 'Low', status: 'Resolved', notes: 'Fix deployed and verified.' }
+      { id: 'INC-1042', summary: 'TV authentication failures', service: 'Identity service', owner: 'Platform', severity: 'Critical', status: 'Open', notes: 'Users are unable to complete sign-in.', date: todayIso() },
+      { id: 'INC-1041', summary: 'Delayed incident notifications', service: 'Notifications', owner: 'SRE', severity: 'High', status: 'In Progress', notes: 'Delivery latency is above the normal threshold.', date: yesterdayIso() },
+      { id: 'INC-1040', summary: 'Guide content out of date', service: 'TV guide', owner: 'Content', severity: 'Medium', status: 'In Progress', notes: 'Refreshing the content feed.', date: twoDaysAgoIso() },
+      { id: 'INC-1039', summary: 'Remote pairing restored', service: 'Device pairing', owner: 'TV Experience', severity: 'Low', status: 'Resolved', notes: 'Fix deployed and verified.', date: threeDaysAgoIso() }
     ];
+
+    function todayIso() { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+    function offsetIso(days) { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+    function yesterdayIso() { return offsetIso(-1); }
+    function twoDaysAgoIso() { return offsetIso(-2); }
+    function threeDaysAgoIso() { return offsetIso(-3); }
+
     let incidents = JSON.parse(localStorage.getItem('incidents') || 'null') || starterIncidents;
     const $ = id => document.getElementById(id);
     const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function formatDate(raw) {
+      if (!raw) return '—';
+      const d = new Date(raw + 'T00:00:00');
+      if (Number.isNaN(d.getTime())) return raw;
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
     function render() {
       const query = $('search').value.toLowerCase().trim(), filter = $('statusFilter').value;
-      const shown = incidents.filter(i => (filter === 'all' || i.status === filter) && [i.id,i.summary,i.service,i.owner,i.severity,i.status].join(' ').toLowerCase().includes(query));
-      $('incidentRows').innerHTML = shown.map(i => `<tr tabindex="0"><td class="id">${esc(i.id)}</td><td><span class="summary">${esc(i.summary)}</span><span class="details">${esc(i.service)}${i.notes ? ' · ' + esc(i.notes) : ''}</span></td><td><span class="pill sev-${i.severity.toLowerCase()}">${esc(i.severity)}</span></td><td>${esc(i.owner)}</td><td><span class="pill status-${i.status.toLowerCase().replace(' ', '-')}">${esc(i.status)}</span></td></tr>`).join('');
+      const shown = incidents.filter(i => (filter === 'all' || i.status === filter) && [i.id,i.summary,i.service,i.owner,i.severity,i.status,i.date].join(' ').toLowerCase().includes(query));
+      $('incidentRows').innerHTML = shown.map(i => `<tr tabindex="0"><td class="id">${esc(i.id)}</td><td><span class="summary">${esc(i.summary)}</span><span class="details">${esc(i.service)}${i.notes ? ' · ' + esc(i.notes) : ''}</span></td><td><span class="pill sev-${i.severity.toLowerCase()}">${esc(i.severity)}</span></td><td>${esc(i.owner)}</td><td><span class="pill status-${i.status.toLowerCase().replace(' ', '-')}">${esc(i.status)}</span></td><td>${esc(formatDate(i.date))}</td></tr>`).join('');
       $('emptyState').style.display = shown.length ? 'none' : 'block';
       $('totalCount').textContent = incidents.length; $('openCount').textContent = incidents.filter(i => i.status === 'Open').length; $('progressCount').textContent = incidents.filter(i => i.status === 'In Progress').length; $('resolvedCount').textContent = incidents.filter(i => i.status === 'Resolved').length;
       localStorage.setItem('incidents', JSON.stringify(incidents));
     }
-    function updateClock() { $('clock').textContent = new Date().toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    function updateClock() {
+      $('clock').textContent = new Date().toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const now = new Date();
+      $('dayTag').textContent = now.toLocaleDateString([], { weekday: 'long' });
+    }
     function openModal() { $('modalBackdrop').classList.add('show'); $('summary').focus(); }
-    function closeModal() { $('modalBackdrop').classList.remove('show'); $('incidentForm').reset(); }
-    $('search').addEventListener('input', render); $('statusFilter').addEventListener('change', render); $('newIncident').addEventListener('click', openModal); $('cancelModal').addEventListener('click', closeModal);
+    function closeModal() { $('modalBackdrop').classList.remove('show'); $('incidentForm').reset(); $('date').value = todayIso(); }
+    function resetIncidentData() {
+      if (!confirm('Reset all incidents back to the default sample data?')) return;
+      incidents = starterIncidents.map(item => ({ ...item }));
+      localStorage.removeItem('incidents');
+      render();
+    }
+    $('search').addEventListener('input', render); $('statusFilter').addEventListener('change', render); $('newIncident').addEventListener('click', openModal); $('cancelModal').addEventListener('click', closeModal); $('resetData').addEventListener('click', resetIncidentData);
     $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
-    $('incidentForm').addEventListener('submit', e => { e.preventDefault(); const next = incidents.length ? Math.max(...incidents.map(i => Number(i.id.replace(/\D/g, '')) || 0)) + 1 : 1000; incidents.unshift({ id: `INC-${next}`, summary: $('summary').value, service: $('service').value || 'Unassigned service', owner: $('owner').value, severity: $('severity').value, status: $('status').value, notes: $('notes').value }); closeModal(); render(); });
+    $('incidentForm').addEventListener('submit', e => { e.preventDefault(); const next = incidents.length ? Math.max(...incidents.map(i => Number(i.id.replace(/\D/g, '')) || 0)) + 1 : 1000; incidents.unshift({ id: `INC-${next}`, summary: $('summary').value, service: $('service').value || 'Unassigned service', owner: $('owner').value, severity: $('severity').value, status: $('status').value, notes: $('notes').value, date: $('date').value || todayIso() }); closeModal(); render(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modalBackdrop').classList.contains('show')) closeModal(); });
+    $('date').value = todayIso();
     render(); updateClock(); setInterval(updateClock, 30000);
   </script>
 </body>
