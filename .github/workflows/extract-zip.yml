@@ -1,0 +1,46 @@
+name: Extract Google TV APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Google-TV-Tracker-APK.zip"
+      - ".github/workflows/extract-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Extract APK archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf extracted-apk
+          mkdir -p extracted-apk
+          unzip -q -o "Google-TV-Tracker-APK.zip" -d extracted-apk
+          echo "Extracted files:"
+          find extracted-apk -type f -print
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="extracted-apk/app-debug.apk"
+          test -f "$apk"
+          file "$apk"
+          sha256sum "$apk"
+
+      - name: Upload extracted APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: extracted-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
