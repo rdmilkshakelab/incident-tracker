@@ -2,7 +2,7 @@
 <widget id="com.alfernado.tvtracker" version="1.0.0" xmlns="http://w3.org" xmlns:cdv="http://apache.org">
     <name>Incident Tracker</name>
     <description>Days without incident tracker for Google TV.</description>
-    <author email="alfernado"outlook.com" href="http://example.com">You</author>
+    <author email="alfernado@outlook.com" href="http://example.com">You</author>
     <content src="index.html" />
     <preference name="ScrollEnabled" value="false" />
     
