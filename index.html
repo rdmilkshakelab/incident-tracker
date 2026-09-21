@@ -1,618 +1,232 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Incident Tracker</title>
-  <style>
-    :root {
-      --bg: #07111d;
-      --bg2: #0d1b2a;
-      --panel: rgba(17, 27, 40, 0.92);
-      --panel-2: rgba(20, 35, 50, 0.95);
-      --line: rgba(158, 176, 199, 0.18);
-      --text: #edf6ff;
-      --muted: #9ab0c9;
-      --blue: #6bb5ff;
-      --blue-2: #3d8bff;
-      --green: #47d397;
-      --yellow: #f0c96b;
-      --red: #ff7a7a;
-      --shadow: rgba(0, 0, 0, 0.28);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Incident Tracker</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+            background: #0c0d0f; 
+            color: #ffffff; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+            text-align: center;
+        }
 
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      min-height: 100%;
-      background: linear-gradient(180deg, var(--bg) 0%, #0b1626 100%);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-    }
+        .container {
+            width: 90vw;
+            max-width: 1200px;
+        }
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 36px 26px;
-    }
+        h1 { 
+            font-size: 4.5rem; 
+            font-weight: 700;
+            color: #a0a5b5;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
 
-    .app {
-      width: min(1400px, 100%);
-      min-height: 95vh;
-      background: rgba(8, 17, 29, 0.7);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      box-shadow: 0 18px 45px var(--shadow);
-      overflow: hidden;
-    }
+        .counter { 
+            font-size: 22rem; 
+            font-weight: 900; 
+            color: #ff3e3e; 
+            line-height: 1;
+            margin: 10px 0;
+            text-shadow: 0 0 50px rgba(255, 62, 62, 0.4);
+        }
 
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 24px 32px 18px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(15, 25, 37, 0.9);
-    }
+        .date-label { 
+            font-size: 2.2rem; 
+            color: #70757a; 
+            margin-bottom: 50px;
+        }
 
-    .branding {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+        .date-label span {
+            color: #ffffff;
+            font-weight: bold;
+        }
 
-    .brand-mark {
-      width: 52px;
-      height: 52px;
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      font-size: 27px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, var(--blue), var(--blue-2));
-      color: #06131f;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
-    }
+        .btn-reset { 
+            background: #1c1d22; 
+            color: #ff3e3e; 
+            border: 4px solid #ff3e3e; 
+            padding: 24px 60px; 
+            font-size: 2.5rem; 
+            font-weight: bold;
+            border-radius: 50px; 
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease-in-out;
+            text-transform: uppercase;
+        }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(28px, 2vw, 40px);
-      letter-spacing: 0.2px;
-    }
+        .btn-reset:focus, .btn-reset:hover { 
+            background: #ff3e3e; 
+            color: #ffffff;
+            transform: scale(1.08);
+            box-shadow: 0 0 50px rgba(255, 62, 62, 0.6);
+        }
 
-    .subtitle {
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+        /* TV-Friendly Modal Dialog (Replaces native broken popups) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
 
-    .header-tools {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
+        .modal-content {
+            background: #16171a;
+            border: 3px solid #30343c;
+            padding: 50px;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 80%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
 
-    .day-pill {
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(107, 181, 255, 0.42);
-      background: rgba(107, 181, 255, 0.08);
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+        .modal h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
 
-    .clock {
-      color: var(--muted);
-      font-size: 14px;
-      letter-spacing: 0.04em;
-    }
+        .modal p {
+            font-size: 1.8rem;
+            color: #a0a5b5;
+            margin-bottom: 40px;
+        }
 
-    .content {
-      padding: 28px 32px 36px;
-    }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
 
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 18px;
-      margin-bottom: 28px;
-    }
+        .modal-btn {
+            flex: 1;
+            padding: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            text-transform: uppercase;
+        }
 
-    .stat {
-      padding: 22px 18px;
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(18, 34, 50, 0.96), rgba(9, 18, 29, 0.96));
-      border-radius: 16px;
-      min-height: 114px;
-    }
+        .btn-confirm { background: #ff3e3e; color: white; }
+        .btn-cancel { background: #30343c; color: white; }
 
-    .stat-label {
-      color: var(--muted);
-      font-size: 13px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      margin-top: 14px;
-      font-size: clamp(28px, 1.8vw, 42px);
-      font-weight: 800;
-      letter-spacing: -0.04em;
-    }
-
-    .blue { color: var(--blue); }
-    .red { color: var(--red); }
-    .yellow { color: var(--yellow); }
-    .green { color: var(--green); }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
-
-    .toolbar h2 {
-      margin: 0;
-      flex: 1;
-      font-size: clamp(22px, 1.6vw, 28px);
-    }
-
-    input, select, button {
-      font: inherit;
-    }
-
-    .search,
-    select {
-      background: rgba(7, 17, 29, 0.95);
-      color: var(--text);
-      padding: 12px 14px;
-      border: 1px solid rgba(158, 176, 199, 0.25);
-      border-radius: 10px;
-      outline: none;
-    }
-
-    .search { width: 255px; }
-
-    button {
-      border: 0;
-      border-radius: 10px;
-      padding: 12px 18px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    button:hover { transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
-
-    .primary {
-      background: linear-gradient(180deg, #83ccff, var(--blue));
-      color: #05121d;
-    }
-
-    .secondary {
-      background: rgba(255,255,255,0.02);
-      color: var(--text);
-      border: 1px solid rgba(158, 176, 199, 0.22);
-    }
-
-    .danger {
-      background: rgba(255, 122, 122, 0.12);
-      border: 1px solid rgba(255, 122, 122, 0.3);
-      color: #ffc3c3;
-    }
-
-    .panel {
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(17, 28, 40, 0.92), rgba(10, 17, 28, 0.96));
-      border-radius: 18px;
-      overflow: hidden;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    th {
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-weight: 700;
-      background: rgba(255,255,255,0.01);
-    }
-
-    tbody tr:hover {
-      background: rgba(255,255,255,0.015);
-    }
-
-    tr:last-child td { border-bottom: none; }
-
-    .id { color: var(--blue); font-weight: 700; }
-    .summary { font-weight: 700; }
-    .details {
-      display: block;
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .pill {
-      display: inline-block;
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .sev-critical { background: rgba(255,122,122,0.12); color: #ffc3c3; }
-    .sev-high { background: rgba(240, 201, 107, 0.12); color: #f0d99b; }
-    .sev-medium { background: rgba(107, 181, 255, 0.12); color: #cfe6ff; }
-    .sev-low { background: rgba(71, 211, 151, 0.12); color: #acf5d2; }
-
-    .status-open { background: rgba(255,122,122,0.12); color: #ffc3c3; }
-    .status-progress { background: rgba(107, 181, 255, 0.12); color: #cfe6ff; }
-    .status-resolved { background: rgba(71, 211, 151, 0.12); color: #acf5d2; }
-
-    .empty {
-      display: none;
-      padding: 52px 24px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 16px;
-    }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(4, 9, 16, 0.7);
-      display: none;
-      place-items: center;
-      padding: 24px;
-    }
-
-    .modal-backdrop.show { display: grid; }
-
-    .modal {
-      width: min(680px, 100%);
-      padding: 28px;
-      border-radius: 18px;
-      background: rgba(12, 23, 35, 0.98);
-      border: 1px solid var(--line);
-      box-shadow: 0 18px 45px rgba(0,0,0,0.45);
-    }
-
-    .modal h2 {
-      margin: 0 0 18px;
-      font-size: 30px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .full {
-      grid-column: 1 / -1;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      background: rgba(7, 17, 29, 0.96);
-      color: var(--text);
-      border: 1px solid rgba(158,176,199,.25);
-      border-radius: 10px;
-      padding: 12px 14px;
-      resize: vertical;
-    }
-
-    .field textarea { min-height: 110px; }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 900px) {
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .topbar { flex-direction: column; align-items: flex-start; }
-      .header-tools { width: 100%; justify-content: flex-start; }
-    }
-
-    @media (max-width: 640px) {
-      body { padding: 18px 14px; }
-      .app { border-radius: 16px; }
-      .content, .topbar { padding-left: 18px; padding-right: 18px; }
-      .stats { grid-template-columns: 1fr; }
-      .toolbar { align-items: stretch; }
-      .toolbar h2 { width: 100%; }
-      .search, select, .toolbar > * { width: 100%; }
-      .form-grid { grid-template-columns: 1fr; }
-      th:nth-child(4), td:nth-child(4) { display: none; }
-    }
-  </style>
+        .modal-btn:focus, .modal-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
+        .btn-confirm:focus { box-shadow: 0 0 30px rgba(255, 62, 62, 0.6); }
+    </style>
 </head>
 <body>
-  <div class="app">
-    <header class="topbar">
-      <div class="branding">
-        <div class="brand-mark">IT</div>
-        <div>
-          <h1>Incident Tracker</h1>
-          <div class="subtitle">Operations overview</div>
+
+    <div class="container">
+        <h1>Days Without Incident</h1>
+        <div class="counter" id="daysCount">0</div>
+        <div class="date-label">Since last record: <span id="lastDate">--/--/----</span></div>
+        <button class="btn-reset" id="resetBtn" autofocus>Reset Counter</button>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h2>Reset Counter?</h2>
+            <p>This will set the record back to 0 days.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-confirm" id="modalYes">Yes, Reset</button>
+                <button class="modal-btn btn-cancel" id="modalNo">Cancel</button>
+            </div>
         </div>
-      </div>
-      <div class="header-tools">
-        <div class="day-pill" id="dayTag">Today</div>
-        <div class="clock" id="clock"></div>
-      </div>
-    </header>
+    </div>
 
-    <main class="content">
-      <section class="stats">
-        <div class="stat">
-          <div class="stat-label">Total</div>
-          <div class="stat-value blue" id="totalCount">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Open</div>
-          <div class="stat-value red" id="openCount">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">In Progress</div>
-          <div class="stat-value yellow" id="progressCount">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Resolved</div>
-          <div class="stat-value green" id="resolvedCount">0</div>
-        </div>
-      </section>
+    <script>
+        const resetBtn = document.getElementById('resetBtn');
+        const modal = document.getElementById('confirmModal');
+        const modalYes = document.getElementById('modalYes');
+        const modalNo = document.getElementById('modalNo');
 
-      <section>
-        <div class="toolbar">
-          <h2>Active incidents</h2>
-          <input class="search" id="search" type="search" placeholder="Search incidents" aria-label="Search incidents" />
-          <select id="statusFilter" aria-label="Filter by status">
-            <option value="all">All statuses</option>
-            <option value="Open">Open</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Resolved">Resolved</option>
-          </select>
-          <button class="primary" id="newIncident" type="button">+ New</button>
-          <button class="danger" id="resetData" type="button">Reset</button>
-        </div>
+        function getSavedDate() {
+            let saved = localStorage.getItem('tvLastIncidentDate');
+            if (!saved) {
+                saved = new Date().toLocaleDateString();
+                localStorage.setItem('tvLastIncidentDate', saved);
+            }
+            return saved;
+        }
 
-        <div class="panel">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Incident</th>
-                <th>Severity</th>
-                <th>Owner</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody id="incidentRows"></tbody>
-          </table>
-          <div class="empty" id="emptyState">No incidents match your filters.</div>
-        </div>
-      </section>
-    </main>
-  </div>
+        function calculateDays() {
+            const lastDateStr = getSavedDate();
+            document.getElementById('lastDate').innerText = lastDateStr;
+            
+            const lastDate = new Date(lastDateStr);
+            const today = new Date();
+            
+            lastDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            
+            const diffTime = today - lastDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('daysCount').innerText = diffDays >= 0 ? diffDays : 0;
+        }
 
-  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true"> 
-    <form class="modal" id="incidentForm">
-      <h2>Create incident</h2>
-      <div class="form-grid">
-        <label class="field full">
-          Summary
-          <input id="summary" maxlength="80" required placeholder="What happened?" />
-        </label>
+        // Open custom modal
+        resetBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            modalYes.focus(); // Shift TV focus to modal
+        });
 
-        <label class="field">
-          Severity
-          <select id="severity">
-            <option>Critical</option>
-            <option>High</option>
-            <option selected>Medium</option>
-            <option>Low</option>
-          </select>
-        </label>
+        // Confirm Reset
+        modalYes.addEventListener('click', () => {
+            const todayStr = new Date().toLocaleDateString();
+            localStorage.setItem('tvLastIncidentDate', todayStr);
+            calculateDays();
+            closeModal();
+        });
 
-        <label class="field">
-          Owner
-          <input id="owner" maxlength="40" required placeholder="Team or person" />
-        </label>
+        // Cancel Reset
+        modalNo.addEventListener('click', closeModal);
 
-        <label class="field">
-          Status
-          <select id="status">
-            <option selected>Open</option>
-            <option>In Progress</option>
-            <option>Resolved</option>
-          </select>
-        </label>
+        function closeModal() {
+            modal.style.display = 'none';
+            resetBtn.focus(); // Return focus to main button
+        }
 
-        <label class="field">
-          Date
-          <input id="date" type="date" required />
-        </label>
+        // Keep TV D-pad focus locked inside active screen elements
+        window.addEventListener('keydown', function(e) {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                if (modal.style.display === 'flex') {
+                    if (document.activeElement !== modalYes && document.activeElement !== modalNo) {
+                        modalYes.focus();
+                    }
+                } else {
+                    resetBtn.focus();
+                }
+            }
+        });
 
-        <label class="field full">
-          Service
-          <input id="service" maxlength="40" placeholder="Affected service" />
-        </label>
-
-        <label class="field full">
-          Notes
-          <textarea id="notes" maxlength="200" placeholder="Add context"></textarea>
-        </label>
-      </div>
-
-      <div class="modal-actions">
-        <button class="secondary" type="button" id="cancelModal">Cancel</button>
-        <button class="primary" type="submit">Save</button>
-      </div>
-    </form>
-  </div>
-
-  <script>
-    function isoToday() {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      return d.toISOString().slice(0, 10);
-    }
-    function isoOffset(days) {
-      const d = new Date();
-      d.setDate(d.getDate() + days);
-      d.setHours(0, 0, 0, 0);
-      return d.toISOString().slice(0, 10);
-    }
-
-    const starterIncidents = [
-      { id: 'INC-1042', summary: 'TV authentication failures', service: 'Identity service', owner: 'Platform', severity: 'Critical', status: 'Open', notes: 'Users are unable to complete sign-in.', date: isoToday() },
-      { id: 'INC-1041', summary: 'Delayed incident notifications', service: 'Notifications', owner: 'SRE', severity: 'High', status: 'In Progress', notes: 'Delivery latency is above the normal threshold.', date: isoOffset(-1) },
-      { id: 'INC-1040', summary: 'Guide content out of date', service: 'TV guide', owner: 'Content', severity: 'Medium', status: 'In Progress', notes: 'Refreshing the content feed.', date: isoOffset(-2) },
-      { id: 'INC-1039', summary: 'Remote pairing restored', service: 'Device pairing', owner: 'TV Experience', severity: 'Low', status: 'Resolved', notes: 'Fix deployed and verified.', date: isoOffset(-3) }
-    ];
-
-    let incidents = JSON.parse(localStorage.getItem('incidents') || 'null') || starterIncidents;
-
-    const $ = (id) => document.getElementById(id);
-    const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-
-    function formatDate(raw) {
-      if (!raw) return '—';
-      const d = new Date(raw + 'T00:00:00');
-      if (Number.isNaN(d.getTime())) return raw;
-      return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-    }
-
-    function render() {
-      const q = $('search').value.toLowerCase().trim();
-      const filter = $('statusFilter').value;
-      const visible = incidents.filter((item) => {
-        const matchesStatus = filter === 'all' || item.status === filter;
-        const haystack = [item.id, item.summary, item.service, item.owner, item.severity, item.status, item.date].join(' ').toLowerCase();
-        return matchesStatus && haystack.includes(q);
-      });
-
-      $('incidentRows').innerHTML = visible.map((item) => `
-        <tr>
-          <td class="id">${esc(item.id)}</td>
-          <td>
-            <span class="summary">${esc(item.summary)}</span>
-            <span class="details">${esc(item.service)}${item.notes ? ' · ' + esc(item.notes) : ''}</span>
-          </td>
-          <td><span class="pill sev-${item.severity.toLowerCase()}">${esc(item.severity)}</span></td>
-          <td>${esc(item.owner)}</td>
-          <td><span class="pill status-${item.status.toLowerCase().replace(' ', '-')}">${esc(item.status)}</span></td>
-          <td>${esc(formatDate(item.date))}</td>
-        </tr>
-      `).join('');
-
-      $('emptyState').style.display = visible.length ? 'none' : 'block';
-      $('totalCount').textContent = incidents.length;
-      $('openCount').textContent = incidents.filter(i => i.status === 'Open').length;
-      $('progressCount').textContent = incidents.filter(i => i.status === 'In Progress').length;
-      $('resolvedCount').textContent = incidents.filter(i => i.status === 'Resolved').length;
-
-      localStorage.setItem('incidents', JSON.stringify(incidents));
-    }
-
-    function updateClock() {
-      const now = new Date();
-      $('clock').textContent = now.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-      $('dayTag').textContent = now.toLocaleDateString([], { weekday: 'long' });
-    }
-
-    function openModal() {
-      $('modalBackdrop').classList.add('show');
-      $('summary').focus();
-    }
-
-    function closeModal() {
-      $('modalBackdrop').classList.remove('show');
-      $('incidentForm').reset();
-      $('date').value = isoToday();
-    }
-
-    function resetIncidentData() {
-      if (!confirm('Reset to the default incident list?')) return;
-      incidents = starterIncidents.map(i => ({ ...i }));
-      localStorage.removeItem('incidents');
-      render();
-    }
-
-    $('search').addEventListener('input', render);
-    $('statusFilter').addEventListener('change', render);
-    $('newIncident').addEventListener('click', openModal);
-    $('cancelModal').addEventListener('click', closeModal);
-    $('resetData').addEventListener('click', resetIncidentData);
-    $('modalBackdrop').addEventListener('click', (e) => {
-      if (e.target === $('modalBackdrop')) closeModal();
-    });
-
-    $('incidentForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const nextNumber = incidents.length ? Math.max(...incidents.map(i => parseInt((i.id.match(/\d+/) || [0])[0], 10) || 0)) + 1 : 1000;
-      incidents.unshift({
-        id: `INC-${nextNumber}`,
-        summary: $('summary').value,
-        service: $('service').value || 'Unassigned service',
-        owner: $('owner').value,
-        severity: $('severity').value,
-        status: $('status').value,
-        notes: $('notes').value,
-        date: $('date').value || isoToday()
-      });
-      closeModal();
-      render();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && $('modalBackdrop').classList.contains('show')) closeModal();
-    });
-
-    $('date').value = isoToday();
-    render();
-    updateClock();
-    setInterval(updateClock, 30000);
-  </script>
+        // Init
+        calculateDays();
+        resetBtn.focus();
+    </script>
 </body>
 </html>
